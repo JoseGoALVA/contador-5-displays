@@ -54,6 +54,7 @@ PSECT udata_shr		    ; Memoria compartida
     CONT_2:		DS 1
     CONTADOR_10S:	DS 1
     CONT_3:		DS 1
+
   
 PSECT resVect, class=CODE, abs, delta=2
 ORG 00h
@@ -211,6 +212,12 @@ CONTADOR:
     BTFSC   STATUS, 2
     CALL    CONTADOR2
     
+    CLRW
+    CLRF    STATUS
+    MOVLW   7
+    XORWF   CONT_3, W
+    BTFSC   STATUS, 2
+    CALL    RESET_60SEGUNDOS
 
     CLRF    CONT
     CLRF    STATUS
@@ -227,6 +234,13 @@ CONTADOR2:
     CLRF    CONT_3  
     MOVF    CONT_3
     GOTO    CONTADOR
+    
+RESET_60SEGUNDOS:
+    RESET_TMR0 100
+    CLRF    CONT_2
+    CLRF    CONT_3
+    CLRF    CONT
+    RETURN
     
 ORG 200h    
 TABLA:
