@@ -214,7 +214,7 @@ CONTADOR:
     
     CLRW
     CLRF    STATUS
-    MOVLW   7
+    MOVLW   4
     XORWF   CONT_3, W
     BTFSC   STATUS, 2
     CALL    RESET_60SEGUNDOS
