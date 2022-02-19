@@ -226,11 +226,13 @@ CONTADOR:
 CONTADOR2:
     RESET_TMR0 100
     CLRF    CONT_2
+    
     MOVF    CONT_3, W		; Valor de contador a W para buscarlo en la tabla
     CALL    TABLA		; Buscamos caracter de CONT en la tabla ASCII
     MOVWF   PORTC
     INCF    CONT_3
-    BTFSC   CONT_3, 4		; Verificamos que el contador no sea menor a 0
+    
+    BTFSC   CONT_3, 4		; Verificamos que el contador no sea menor a 15
     CLRF    CONT_3  
     MOVF    CONT_3
     GOTO    CONTADOR
