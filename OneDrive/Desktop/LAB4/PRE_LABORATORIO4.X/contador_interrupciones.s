@@ -53,6 +53,7 @@ PSECT udata_shr		    ; Memoria compartida
     CONT_ASCII:		DS 1
     CONT_2:		DS 1
     CONTADOR_10S:	DS 1
+    CONT_3:		DS 1
   
 PSECT resVect, class=CODE, abs, delta=2
 ORG 00h
@@ -170,10 +171,7 @@ CONFIG_IO:
     MOVF    CONT_2, W		; Valor de contador a W para buscarlo en la tabla
     CALL    TABLA		; Buscamos caracter de CONT en la tabla ASCII	
     MOVWF   PORTD
-    
-    
-    
-    ; Apagamos PORTD
+
  
     RETURN 
     
@@ -199,24 +197,42 @@ CONTADOR:
     XORWF   CONT, W
     BTFSS   STATUS, 2
     RETURN
-    
+
+    CLRF    STATUS
     MOVF    CONT_2, W		; Valor de contador a W para buscarlo en la tabla
     CALL    TABLA		; Buscamos caracter de CONT en la tabla ASCII
-    MOVWF   PORTD		; Guardamos caracter de CONT en ASCII
-    INCF    CONT_2		; Incremento de contador
-    BTFSC   CONT_2, 4		; Verificamos que el contador no sea mayor a 7
-    CLRF    CONT_2
-      
+    MOVWF   PORTD
+    
+    INCF    CONT_2
+				; Guardamos caracter de CONT en ASCII
+    CLRW
+    MOVLW   11
+    XORWF   CONT_2, W
+    BTFSC   STATUS, 2
+    CALL    CONTADOR2
+    
+
     CLRF    CONT
     CLRF    STATUS
-
     RETURN 
+   
+CONTADOR2:
+    RESET_TMR0 100
+    CLRF    CONT_2
+    MOVF    CONT_3, W		; Valor de contador a W para buscarlo en la tabla
+    CALL    TABLA		; Buscamos caracter de CONT en la tabla ASCII
+    MOVWF   PORTC
+    INCF    CONT_3
+    BTFSC   CONT_3, 4		; Verificamos que el contador no sea menor a 0
+    CLRF    CONT_3  
+    MOVF    CONT_3
+    GOTO    CONTADOR
     
 ORG 200h    
 TABLA:
     CLRF    PCLATH			; Limpiamos registro PCLATH
     BSF	    PCLATH, 1			; Posicionamos el PC en dirección 02xxh
-    ANDLW   0x0B			; no saltar más del tamaño de la tabla
+    ANDLW   0x0f			; no saltar más del tamaño de la tabla
     ADDWF   PCL				; Apuntamos el PC a caracter en ASCII de CONT
     RETLW   0b00000011		    	; ASCII char 0
     RETLW   0b10011111			; ASCII char 1
@@ -229,5 +245,9 @@ TABLA:
     RETLW   0b00000001			; ASCII char 8
     RETLW   0b00001001			; ascii char 9
     RETLW   0b00010001			; Hex char a
- 
+    RETLW   0b11000001			; Hex char b
+    RETLW   0b11100101			; Hex char c
+    RETLW   0b10000101			; Hex char d
+    RETLW   0b11100001			; Hex char e
+    RETLW   0b01110001			; Hex char f      
 END
