@@ -75,7 +75,7 @@ PUSH:
 ISR:
     BTFSC   RBIF
     CALL    INT_IOCB
-    RESET_TMR0    100 ; 50ms
+    RESET_TMR0    100 ; 20ms
     CALL    CONTADOR
     
     
@@ -121,7 +121,7 @@ CONFIG_TMR0:
     
     BANKSEL TMR0	    ; cambiamos de banco
     MOVLW   100
-    MOVWF   TMR0	    ; 50ms retardo
+    MOVWF   TMR0	    ; 20ms retardo
     BCF	    T0IF	    ; limpiamos bandera de interrupción
     RETURN
     
