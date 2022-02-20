@@ -29,17 +29,17 @@ PROCESSOR 16F887
   CONFIG  WRT =	    OFF             ; Flash Program Memory Self Write Enable bits (Write protection off)
   CONFIG  BOR4V =   BOR40V        ; Brown-out Reset Selection bit (Brown-out Reset set to 4.0V)
 
-RESET_TMR0 MACRO TMR_VAR
+RESET_TMR0 MACRO TMR_VAR	    
     BANKSEL TMR0	    ; cambiamos de banco
-    MOVLW   TMR_VAR
+    MOVLW   TMR_VAR	    ; movemos el valor de TMR_VAR a W
     MOVWF   TMR0	    ; configuramos tiempo de retardo
     BCF	    T0IF	    ; limpiamos bandera de interrupción
-    ENDM
+    ENDM		    ; terminamos el macro
 
 
   
-UP	EQU 0
-DOWN	EQU 7
+UP	EQU 0		    ; asignamos el bit 0 (numero de puerto) a la variable UP
+DOWN	EQU 7		    ; asignamos el bit 7 (numero de puerto) a la variable DOWN 
   
 PSECT udata_bank0
   cont:		DS 2
@@ -49,11 +49,10 @@ PSECT udata_bank0
 PSECT udata_shr		    ; Memoria compartida
     W_TEMP:		DS 1
     STATUS_TEMP:	DS 1
-    CONT:		DS 1
-    CONT_ASCII:		DS 1
-    CONT_2:		DS 1
-    CONTADOR_10S:	DS 1
-    CONT_3:		DS 1
+    CONT:		DS 1	; contador para el primer display
+    CONT_ASCII:		DS 1	; Contador para la tabla
+    CONT_2:		DS 1	; contador para el segundo display
+    CONT_3:		DS 1	; contador que chuquea el loop cada 60 segundos
 
   
 PSECT resVect, class=CODE, abs, delta=2
@@ -89,11 +88,11 @@ POP:
  
 INT_IOCB:
     BANKSEL PORTA
-    BTFSS   PORTB, UP
+    BTFSS   PORTB, UP	    ; llequemao el estado de puerto en  B
     INCF    PORTA
-    BTFSS   PORTB, DOWN
+    BTFSS   PORTB, DOWN	    ; llequemao el estado de puerto en  B
     DECF    PORTA
-    BCF	    RBIF
+    BCF	    RBIF	    ; Ponemos en cero RBIF
     
     RETURN 
     
@@ -131,12 +130,12 @@ CONFIG_TMR0:
     
 CONFIG_IOCRB:
     BANKSEL TRISA
-    BSF	    IOCB, UP
+    BSF	    IOCB, UP	    ; Activamos la interrupcion en cambio del puerto b
     BSF	    IOCB, DOWN
     
     BANKSEL PORTA
     MOVF    PORTB, W
-    BCF	    RBIF 
+    BCF	    RBIF	    ; Activamos la bandera de interrupcion del puerto b
     RETURN
     
     
@@ -150,28 +149,28 @@ CONFIG_IO:
     BCF	    STATUS, 6
     BCF     TRISA,  0
     BCF     TRISA,  1
-    BCF     TRISA,  2
+    BCF     TRISA,  2		; Asinagmos los puertos en A como salidas
     BCF     TRISA,  3
-    BSF	    TRISB, UP
+    BSF	    TRISB, UP		; Asinagmos los puertos en B como entradas
     BSF	    TRISB, DOWN
-    CLRF    TRISC
+    CLRF    TRISC		; Asinagmos los puertos en C como salidas
     
     BCF	    OPTION_REG, 7
-    BSF	    WPUB, UP
-    BSF	    WPUB, DOWN
+    BSF	    WPUB, UP		; Activamos el sistema pull up del puerto b
+    BSF	    WPUB, DOWN		; Activamos el sistema pull down del puerto b
     
     BCF	    STATUS, 5
     BCF	    STATUS, 6
-    CLRF    PORTA
-    CLRF    PORTC
+    CLRF    PORTA		; limpiamos el puerto A
+    CLRF    PORTC		; limpiamos el puerto B
  
     BANKSEL TRISD
-    CLRF    TRISD
+    CLRF    TRISD		; Asinagmos los puertos en d como salidas
     BANKSEL PORTD
     CLRF    PORTD
     MOVF    CONT_2, W		; Valor de contador a W para buscarlo en la tabla
     CALL    TABLA		; Buscamos caracter de CONT en la tabla ASCII	
-    MOVWF   PORTD
+    MOVWF   PORTD		; Movemos el valor de CONT al puerto D
 
  
     RETURN 
@@ -181,68 +180,68 @@ CONFIG_RELOJ:
     BSF		IRCF2
     BSF		IRCF1
     BCF		IRCF0
-    BSF		SCS	    ; 4Mhz
+    BSF		SCS		; configuramos el oscilador a 4Mhz
     RETURN
 
 CONFIG_INT_ENABLE:
-    BSF	    GIE	  ;INTCON
+    BSF	    GIE			;INTCON
     BSF	    RBIE
     BCF	    RBIF
-    BSF	    T0IE	    ; Habilitamos interrupcion TMR0
-    BCF	    T0IF	    ; Limpiamos bandera de TMR0
+    BSF	    T0IE		; Habilitamos interrupcion TMR0
+    BCF	    T0IF		; Limpiamos bandera de TMR0
     RETURN
     
 CONTADOR:
-    INCF    CONT
-    MOVLW   50
-    XORWF   CONT, W
-    BTFSS   STATUS, 2
+    INCF    CONT		; incrementamos el contadro del primer display
+    MOVLW   50			; Como queremos que cambia cada segundo pasamos el valor literal de 50 a w (1000ms/20ms = 50 repeticiones)
+    XORWF   CONT, W		; Llequeamos si el valor de CONT es igual a 50
+    BTFSS   STATUS, 2		; Llequeamos si la bandera de cero esta activada
     RETURN
 
     CLRF    STATUS
     MOVF    CONT_2, W		; Valor de contador a W para buscarlo en la tabla
     CALL    TABLA		; Buscamos caracter de CONT en la tabla ASCII
-    MOVWF   PORTD
+    MOVWF   PORTD		; movemos el valor al puerto D
     
-    INCF    CONT_2
-				; Guardamos caracter de CONT en ASCII
-    CLRW
-    MOVLW   11
-    XORWF   CONT_2, W
-    BTFSC   STATUS, 2
-    CALL    CONTADOR2
+    INCF    CONT_2		; Incrementamos el contador del segundo display
+				
+    CLRW			; limpiamos W
+    MOVLW   11			; Pasamos el valor literal del hexadecimal A
+    XORWF   CONT_2, W		; chequeamos si el valor literal y el valor en Cont_2 son iguales
+    BTFSC   STATUS, 2		; chequeamos la bandera del cero
+    CALL    CONTADOR2		; Llamamaos la sub rutina del segundo display
+	
+    CLRW			; Limpiamos el valor en w
+    CLRF    STATUS		; Limpiamos las banderas de STATUS
+    MOVLW   4			; Movemos el valor de cuatro para que cada 60 segundos se reinicie el contador
+    XORWF   CONT_3, W		; chequeamos si el valor literal y el valor en Cont_2 son iguales
+    BTFSC   STATUS, 2		; chequeamos la bandera del cero
+    CALL    RESET_60SEGUNDOS	; llamamos a la subrutina del reset cada 60 segundos
     
-    CLRW
-    CLRF    STATUS
-    MOVLW   4
-    XORWF   CONT_3, W
-    BTFSC   STATUS, 2
-    CALL    RESET_60SEGUNDOS
-
-    CLRF    CONT
-    CLRF    STATUS
+    CLRF    CONT		; limpiamoz el contador principal
+    CLRF    STATUS		; Limpiamos las banderas del Status
     RETURN 
    
 CONTADOR2:
-    RESET_TMR0 100
-    CLRF    CONT_2
+    RESET_TMR0 100		; reseteamos el TMR0
+    CLRF    CONT_2		; limpiamos el contador del segundo display
     
     MOVF    CONT_3, W		; Valor de contador a W para buscarlo en la tabla
     CALL    TABLA		; Buscamos caracter de CONT en la tabla ASCII
-    MOVWF   PORTC
-    INCF    CONT_3
+    MOVWF   PORTC		; Movemos el valor de la tabla a PORTC
+    INCF    CONT_3		; Incrementamos nuestro tercer contador
     
     BTFSC   CONT_3, 4		; Verificamos que el contador no sea menor a 15
-    CLRF    CONT_3  
-    MOVF    CONT_3
-    GOTO    CONTADOR
+    CLRF    CONT_3		; limpiamos cont3
+    MOVF    CONT_3		; movemos el cero a cont3
+    GOTO    CONTADOR		; regresamos a la subrutina principal
     
 RESET_60SEGUNDOS:
     RESET_TMR0 100
-    CLRF    CONT_2
-    CLRF    CONT_3
-    CLRF    CONT
-    RETURN
+    CLRF    CONT_2		; Limpiamos el segundo contador
+    CLRF    CONT_3		; Limpiamos el tercer contador
+    CLRF    CONT		; Limpiamos el primer contador
+    RETURN			; regresamos al "loop" prinicipal
     
 ORG 200h    
 TABLA:
